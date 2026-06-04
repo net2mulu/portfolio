@@ -43,10 +43,10 @@ export function MobileCinemaLines() {
           height="260%"
           colorInterpolationFilters="sRGB"
         >
-          <feGaussianBlur id="mNeonBlur" stdDeviation="3" result="blur" />
-          <feFlood floodColor="#ff5500" floodOpacity="0.95" result="color" />
+          <feGaussianBlur id="mNeonBlur" stdDeviation="1.5" result="blur" />
+          <feFlood floodColor="#ff5500" floodOpacity="0.35" result="color" />
           <feComposite in="color" in2="blur" operator="in" result="glow" />
-          <feGaussianBlur in="glow" stdDeviation="2" result="glow2" />
+          <feGaussianBlur in="glow" stdDeviation="1" result="glow2" />
           <feMerge>
             <feMergeNode in="glow2" />
             <feMergeNode in="glow2" />

@@ -1,41 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
-
 export function ParallaxDecor() {
-  const wave1 = useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      if (wave1.current) {
-        gsap.to(wave1.current, {
-          y: -40,
-          ease: "none",
-          scrollTrigger: {
-            trigger: document.body,
-            start: "top top",
-            end: "bottom bottom",
-            scrub: 0.55,
-          },
-        });
-      }
-    });
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div className="pointer-events-none fixed inset-0 z-[5] overflow-hidden lg:z-[38]" aria-hidden>
-      <div className="decor-ambient decor-ambient--nav" />
-      <div className="decor-ambient decor-ambient--top hidden lg:block" />
-
+    <div
+      className="decor-layer pointer-events-none fixed inset-0 z-[5] overflow-visible lg:z-[12]"
+      aria-hidden
+    >
       <svg
-        ref={wave1}
-        className="absolute left-[-2%] top-[30%] w-[48%] max-w-lg opacity-40"
+        className="decor-wave absolute left-[-2%] top-[32%] w-[min(48vw,560px)] opacity-[0.04] max-lg:opacity-[0.05]"
         viewBox="0 0 400 120"
         fill="none"
       >
@@ -47,9 +19,9 @@ export function ParallaxDecor() {
         />
         <defs>
           <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#f97316" stopOpacity="0.12" />
-            <stop offset="50%" stopColor="#f97316" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#f97316" stopOpacity="0.12" />
+            <stop offset="0%" stopColor="#f97316" stopOpacity="0.02" />
+            <stop offset="50%" stopColor="#f97316" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="#f97316" stopOpacity="0.02" />
           </linearGradient>
         </defs>
       </svg>

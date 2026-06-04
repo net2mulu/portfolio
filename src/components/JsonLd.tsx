@@ -18,6 +18,7 @@ export function JsonLd() {
         "@id": `${siteUrl}/#person`,
         name: site.name,
         url: siteUrl,
+        image: `${siteUrl}/assets/me.png`,
         email: site.email,
         jobTitle: site.title,
         description: about.paragraphs[0],

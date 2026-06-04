@@ -25,10 +25,11 @@ npm run start
 
 ## Frame processing
 
-Re-process portrait frames from `public/new_frames/`:
+From original green-screen frames in `public/frames/` (lossless transparent WebP):
 
 ```bash
+pip install -r requirements.txt
 python3 scripts/process_frames.py
 ```
 
-Output is written to `public/assets/frames/`.
+Output: `public/assets/frames/`. Social preview: `public/assets/me.png`.

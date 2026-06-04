@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { PerformanceBoot } from "@/components/PerformanceBoot";
 import { ScrollCinema } from "@/components/ScrollCinema";
 import { Navigation } from "@/components/Navigation";
 import { ParallaxDecor } from "@/components/ParallaxDecor";
@@ -16,6 +17,7 @@ import {
 export function Portfolio() {
   return (
     <>
+      <PerformanceBoot />
       <ParallaxDecor />
       <Navigation />
 

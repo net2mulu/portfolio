@@ -3,21 +3,31 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { navLinks } from "@/lib/content";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export function Navigation() {
-  const [scrolled, setScrolled] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 1023px)");
+  const [pastHero, setPastHero] = useState(false);
   const [inHero, setInHero] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
-      setScrolled(window.scrollY > 48);
       const cinema = document.getElementById("scroll-cinema");
-      if (cinema) {
-        const rect = cinema.getBoundingClientRect();
-        setInHero(rect.bottom > 80 && rect.top < window.innerHeight * 0.5);
+      if (!cinema) {
+        setPastHero(window.scrollY > 48);
+        setInHero(true);
+        return;
       }
+
+      const rect = cinema.getBoundingClientRect();
+      const heroStillVisible = rect.bottom > 72;
+      const heroCoversTop = rect.top < window.innerHeight * 0.55;
+
+      setInHero(heroStillVisible && heroCoversTop);
+      setPastHero(rect.bottom <= 72);
     };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -25,13 +35,21 @@ export function Navigation() {
 
   useEffect(() => {
     if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") setMenuOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!isMobile || !menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen, isMobile]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -42,55 +60,59 @@ export function Navigation() {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  const headerClass = isMobile
+    ? pastHero
+      ? "nav-mobile-solid"
+      : "nav-mobile-hero"
+    : pastHero
+      ? "nav-desktop-scrolled"
+      : inHero
+        ? "nav-desktop-hero"
+        : "nav-desktop-clear";
+
   return (
     <motion.header
       initial={{ y: -24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, delay: 0.2 }}
-      className={`nav-header fixed top-0 right-0 left-0 z-40 transition-all duration-500 ${
-        scrolled
-          ? "border-b border-white/5 bg-[#0a0a0a]/75 py-3 backdrop-blur-xl lg:border-white/[0.06] lg:bg-[#0a0a0a]/15 lg:backdrop-blur-md"
-          : inHero
-            ? "bg-gradient-to-b from-[#0a0a0a]/90 via-[#0a0a0a]/40 to-transparent py-5 lg:border-transparent lg:bg-transparent lg:backdrop-blur-none"
-            : "bg-transparent py-5 lg:backdrop-blur-none"
-      } ${scrolled ? "py-3 lg:py-4" : "py-5"}`}
+      className={`nav-header fixed top-0 right-0 left-0 z-40 transition-[background,box-shadow,padding] duration-300 ${headerClass} ${pastHero ? "py-3" : "py-5"}`}
     >
       <nav className="site-container flex items-center justify-between">
         <div className="relative">
-          <button
-            type="button"
-            className="font-display cursor-pointer text-sm font-bold tracking-[0.2em] text-foreground uppercase lg:hidden"
-            aria-expanded={menuOpen}
-            aria-controls="mobile-nav-menu"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            NM
-          </button>
           <a
             href="#"
-            className="nav-logo font-display hidden text-sm font-bold tracking-[0.2em] text-foreground uppercase lg:inline-block md:text-base"
+            className={`nav-logo-mark nav-logo${menuOpen && isMobile ? " nav-logo-mark--open" : ""}`}
+            aria-expanded={isMobile ? menuOpen : undefined}
+            aria-controls={isMobile ? "mobile-nav-menu" : undefined}
+            aria-label={
+              isMobile ? (menuOpen ? "Close menu" : "Open menu") : "Natnael Mulugeta home"
+            }
+            onClick={(e) => {
+              if (!isMobile) return;
+              e.preventDefault();
+              setMenuOpen((open) => !open);
+            }}
           >
-            NM
+            <span className="nav-logo-mark__text">NM</span>
           </a>
 
           <AnimatePresence>
-            {menuOpen && (
+            {menuOpen && isMobile && (
               <>
                 <button
                   type="button"
                   aria-label="Close menu"
-                  className="fixed inset-0 z-[35] bg-black/25 lg:hidden"
+                  className="nav-mobile-menu-backdrop fixed inset-0 z-[35] bg-black/40 lg:hidden"
                   onClick={() => setMenuOpen(false)}
                 />
                 <motion.ul
                   id="mobile-nav-menu"
                   role="menu"
-                  className="absolute top-full left-0 z-[41] mt-2 min-w-[180px] rounded-xl border border-white/10 bg-[#111] p-3 shadow-xl lg:hidden"
-                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                  className="nav-mobile-menu z-[41] lg:hidden"
+                  initial={{ opacity: 0, y: -10, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                  transition={{ duration: 0.2 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {navLinks.map((link) => (
                     <li key={link.href} role="none">

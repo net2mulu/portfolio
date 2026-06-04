@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import gsap from "gsap";
 import { PortraitVoidArt } from "@/components/PortraitVoidArt";
 import { FRAME_COUNT, framePath } from "@/lib/frames";
 
@@ -16,7 +15,6 @@ type Layout = { dx: number; dy: number; dw: number; dh: number };
 const BG = "#0a0a0a";
 
 type FitOptions = {
-  /** Multiplier on contain-fit size; >1 fills more of the frame */
   scale: number;
   anchor: "center" | "bottom";
 };
@@ -26,23 +24,36 @@ const FIT: Record<"desktop" | "mobile", FitOptions> = {
   mobile: { scale: 1.28, anchor: "bottom" },
 };
 
+const MAX_DPR: Record<"desktop" | "mobile", number> = {
+  desktop: 1.25,
+  mobile: 1,
+};
+
 function getLayout(
   img: HTMLImageElement,
   cw: number,
   ch: number,
   options: FitOptions,
+  cache: Map<string, Layout>,
 ): Layout | null {
   if (!img.naturalWidth) return null;
+  const key = `${img.src}-${cw}-${ch}-${options.scale}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+
   const fit =
     Math.min(cw / img.naturalWidth, ch / img.naturalHeight) * options.scale;
-  const dw = img.naturalWidth * fit;
-  const dh = img.naturalHeight * fit;
-  const dx = (cw - dw) / 2;
-  const dy =
-    options.anchor === "bottom"
-      ? ch - dh - ch * 0.035
-      : (ch - dh) / 2;
-  return { dx, dy, dw, dh };
+  const layout = {
+    dx: (cw - img.naturalWidth * fit) / 2,
+    dy:
+      options.anchor === "bottom"
+        ? ch - img.naturalHeight * fit - ch * 0.035
+        : (ch - img.naturalHeight * fit) / 2,
+    dw: img.naturalWidth * fit,
+    dh: img.naturalHeight * fit,
+  };
+  cache.set(key, layout);
+  return layout;
 }
 
 function drawImage(
@@ -60,71 +71,104 @@ export function PortraitFrame({
   variant = "desktop",
 }: PortraitFrameProps) {
   const fitOptions = FIT[variant];
+  const opaqueCanvas = variant === "mobile";
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cacheRef = useRef<HTMLImageElement[]>([]);
-  const layoutRef = useRef<{ cw: number; ch: number }>({ cw: 0, ch: 0 });
+  const layoutCacheRef = useRef(new Map<string, Layout>());
+  const sizeRef = useRef({ cw: 0, ch: 0, dpr: 1 });
+  const lastDrawRef = useRef({ p: -1, i0: -1, i1: -1, blend: -1 });
   const [ready, setReady] = useState(false);
 
-  const opaqueCanvas = variant === "mobile";
-
-  const render = useCallback(
-    (p: number, options: FitOptions, fillOpaque: boolean) => {
+  const syncCanvasSize = useCallback(() => {
     const canvas = canvasRef.current;
-    const cache = cacheRef.current;
-    if (!canvas || cache.length === 0) return;
+    if (!canvas) return false;
 
-    const ctx = canvas.getContext("2d", { alpha: !fillOpaque });
-    if (!ctx) return;
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(
+      window.devicePixelRatio || 1,
+      MAX_DPR[variant],
+    );
     const rect = canvas.getBoundingClientRect();
     const cw = Math.floor(rect.width * dpr);
     const ch = Math.floor(rect.height * dpr);
 
-    if (canvas.width !== cw || canvas.height !== ch) {
+    if (cw < 1 || ch < 1) return false;
+
+    if (
+      sizeRef.current.cw !== cw ||
+      sizeRef.current.ch !== ch ||
+      sizeRef.current.dpr !== dpr
+    ) {
       canvas.width = cw;
       canvas.height = ch;
-      layoutRef.current = { cw, ch };
+      sizeRef.current = { cw, ch, dpr };
+      layoutCacheRef.current.clear();
+      lastDrawRef.current = { p: -1, i0: -1, i1: -1, blend: -1 };
     }
+    return true;
+  }, [variant]);
 
-    const exact = p * (FRAME_COUNT - 1);
-    const i0 = Math.floor(exact);
-    const i1 = Math.min(FRAME_COUNT - 1, i0 + 1);
-    let blend = exact - i0;
+  const render = useCallback(
+    (p: number, options: FitOptions, fillOpaque: boolean) => {
+      const canvas = canvasRef.current;
+      const cache = cacheRef.current;
+      if (!canvas || cache.length === 0 || !syncCanvasSize()) return;
 
-    // Tighter crossfade — avoids long double-exposure that causes light flicker
-    if (blend < 0.08) blend = 0;
-    else if (blend > 0.92) blend = 1;
-    else blend = (blend - 0.08) / 0.84;
+      const { cw, ch } = sizeRef.current;
+      const exact = p * (FRAME_COUNT - 1);
+      const i0 = Math.floor(exact);
+      const i1 = Math.min(FRAME_COUNT - 1, i0 + 1);
+      let blend = exact - i0;
 
-    const img0 = cache[i0];
-    const img1 = cache[i1];
-    const l0 = img0 ? getLayout(img0, cw, ch, options) : null;
-    const l1 = img1 ? getLayout(img1, cw, ch, options) : null;
+      if (blend < 0.12) blend = 0;
+      else if (blend > 0.88) blend = 1;
+      else blend = (blend - 0.12) / 0.76;
 
-    if (fillOpaque) {
-      ctx.fillStyle = BG;
-      ctx.fillRect(0, 0, cw, ch);
-    } else {
-      ctx.clearRect(0, 0, cw, ch);
-    }
+      const last = lastDrawRef.current;
+      if (
+        last.p === p &&
+        last.i0 === i0 &&
+        last.i1 === i1 &&
+        Math.abs(blend - last.blend) < 0.02
+      ) {
+        return;
+      }
+      lastDrawRef.current = { p, i0, i1, blend };
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
+      const ctx = canvas.getContext("2d", {
+        alpha: !fillOpaque,
+        desynchronized: true,
+      } as CanvasRenderingContext2DSettings);
+      if (!ctx) return;
 
-    if (blend <= 0) {
-      drawImage(ctx, img0, l0);
-    } else if (blend >= 1) {
-      drawImage(ctx, img1, l1);
-    } else {
-      drawImage(ctx, img0, l0);
-      ctx.globalAlpha = blend;
-      drawImage(ctx, img1, l1);
-      ctx.globalAlpha = 1;
-    }
-  },
-    [],
+      const layoutMap = layoutCacheRef.current;
+      const img0 = cache[i0];
+      const img1 = cache[i1];
+      const l0 = img0 ? getLayout(img0, cw, ch, options, layoutMap) : null;
+      const l1 = img1 ? getLayout(img1, cw, ch, options, layoutMap) : null;
+
+      if (fillOpaque) {
+        ctx.fillStyle = BG;
+        ctx.fillRect(0, 0, cw, ch);
+      } else {
+        ctx.clearRect(0, 0, cw, ch);
+      }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "medium";
+
+      if (blend <= 0) {
+        drawImage(ctx, img0, l0);
+      } else if (blend >= 1) {
+        drawImage(ctx, img1, l1);
+      } else {
+        drawImage(ctx, img0, l0);
+        ctx.globalAlpha = blend;
+        drawImage(ctx, img1, l1);
+        ctx.globalAlpha = 1;
+      }
+    },
+    [syncCanvasSize],
   );
 
   useEffect(() => {
@@ -132,13 +176,15 @@ export function PortraitFrame({
     const cache: HTMLImageElement[] = new Array(FRAME_COUNT);
 
     const preload = async () => {
-      for (let start = 0; start < FRAME_COUNT; start += 12) {
+      const batch = variant === "mobile" ? 16 : 20;
+      for (let start = 0; start < FRAME_COUNT; start += batch) {
         if (cancelled) return;
         await Promise.all(
-          Array.from({ length: Math.min(12, FRAME_COUNT - start) }, (_, j) => {
+          Array.from({ length: Math.min(batch, FRAME_COUNT - start) }, (_, j) => {
             const i = start + j;
             return new Promise<void>((resolve) => {
               const img = new Image();
+              img.decoding = "async";
               img.src = framePath(i);
               img.onload = () => {
                 cache[i] = img;
@@ -168,26 +214,43 @@ export function PortraitFrame({
   useEffect(() => {
     if (!ready) return;
 
-    const tick = () => render(progressRef.current, fitOptions, opaqueCanvas);
-    gsap.ticker.add(tick);
+    let lastP = -1;
+    const tick = () => {
+      const p = progressRef.current;
+      if (p === lastP) return;
+      lastP = p;
+      render(p, fitOptions, opaqueCanvas);
+    };
 
-    const onResize = () =>
+    const onResize = () => {
+      syncCanvasSize();
+      lastDrawRef.current = { p: -1, i0: -1, i1: -1, blend: -1 };
       render(progressRef.current, fitOptions, opaqueCanvas);
-    window.addEventListener("resize", onResize);
+    };
+
+    window.addEventListener("resize", onResize, { passive: true });
 
     const ro =
       wrapRef.current &&
-      new ResizeObserver(() =>
-        render(progressRef.current, fitOptions, opaqueCanvas),
-      );
+      new ResizeObserver(() => {
+        syncCanvasSize();
+        lastDrawRef.current = { p: -1, i0: -1, i1: -1, blend: -1 };
+        render(progressRef.current, fitOptions, opaqueCanvas);
+      });
     if (ro && wrapRef.current) ro.observe(wrapRef.current);
 
+    const rafLoop = () => {
+      tick();
+      frameId = requestAnimationFrame(rafLoop);
+    };
+    let frameId = requestAnimationFrame(rafLoop);
+
     return () => {
-      gsap.ticker.remove(tick);
+      cancelAnimationFrame(frameId);
       window.removeEventListener("resize", onResize);
       ro?.disconnect();
     };
-  }, [ready, render, progressRef, fitOptions, opaqueCanvas]);
+  }, [ready, render, progressRef, fitOptions, opaqueCanvas, syncCanvasSize]);
 
   return (
     <div

@@ -5,8 +5,11 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CinemaLines } from "@/components/CinemaLines";
 import { MobileCinemaLines } from "@/components/MobileCinemaLines";
+import { HeroAmbient } from "@/components/HeroAmbient";
+import { MobileScrollProgress } from "@/components/MobileScrollProgress";
 import { PortraitFrame } from "@/components/PortraitFrame";
 import { about, site } from "@/lib/content";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { bindMobileScrollProxy } from "@/lib/mobileScrollProxy";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -72,6 +75,7 @@ function PanelContent({ index }: { index: 0 | 1 | 2 }) {
 export function ScrollCinema() {
   const rootRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   useEffect(() => {
     const root = rootRef.current;
@@ -132,7 +136,7 @@ export function ScrollCinema() {
             trigger: root,
             start: "top top",
             end: "+=200%",
-            scrub: 0.35,
+            scrub: 0.5,
             pin: "#cinema-pin",
             anticipatePin: 1,
             invalidateOnRefresh: true,
@@ -146,7 +150,7 @@ export function ScrollCinema() {
             trigger: root,
             start: "top top",
             end: "+=200%",
-            scrub: 0.4,
+            scrub: 0.55,
             pin: "#cinema-pin",
             anticipatePin: 1,
             invalidateOnRefresh: true,
@@ -167,17 +171,20 @@ export function ScrollCinema() {
     }, root);
 
     return () => ctx.revert();
-  }, []);
+  }, [isDesktop]);
 
   return (
     <section id="scroll-cinema" ref={rootRef} className="relative" aria-label="Introduction">
       <div id="cinema-pin" className="cinema-pin relative min-h-[100dvh] overflow-hidden">
-        <MobileCinemaLines />
+        <HeroAmbient />
+        {!isDesktop && <MobileCinemaLines />}
+        {!isDesktop && <MobileScrollProgress progressRef={progressRef} />}
 
         {/* ——— Mobile layout ——— */}
+        {!isDesktop && (
         <div
           data-cinema-mobile
-          className="cinema-mobile relative flex h-[100dvh] min-h-0 flex-col touch-pan-y lg:hidden"
+          className="cinema-mobile relative z-[2] flex h-[100dvh] min-h-0 flex-col touch-pan-y"
         >
           <div className="site-container shrink-0 pt-[4.25rem] pb-2">
             <div
@@ -189,7 +196,7 @@ export function ScrollCinema() {
             </div>
           </div>
 
-          <div className="site-container cinema-mobile__copy min-h-0 flex-1 overflow-visible pb-5">
+          <div className="site-container cinema-mobile__copy min-h-0 flex-1 overflow-visible pb-24">
             <div className="cinema-mobile__panels relative min-h-[11rem] flex-1">
               {[0, 1, 2].map((i) => (
                 <article
@@ -204,11 +211,13 @@ export function ScrollCinema() {
             </div>
           </div>
         </div>
+        )}
 
         {/* ——— Desktop layout ——— */}
+        {isDesktop && (
         <div
           data-cinema-desktop
-          className="site-container relative hidden h-[100dvh] pt-[5.5rem] lg:block"
+          className="site-container relative z-[2] h-[100dvh] pt-[5.5rem]"
         >
           <div className="relative h-[calc(100dvh-5.5rem)]">
           <div className="relative z-30 flex h-full flex-col justify-center lg:max-w-[44%] lg:pr-8">
@@ -230,7 +239,7 @@ export function ScrollCinema() {
             data-portrait-wrap
             className="pointer-events-none absolute top-0 right-0 bottom-0 left-[34%] z-[12] lg:left-[38%]"
           >
-            <div className="absolute inset-0 z-0 hidden overflow-hidden lg:block">
+            <div className="absolute inset-0 z-0 overflow-hidden">
               <CinemaLines />
             </div>
             <div className="relative z-[1] h-full">
@@ -239,6 +248,7 @@ export function ScrollCinema() {
           </div>
           </div>
         </div>
+        )}
       </div>
     </section>
   );

@@ -18,7 +18,7 @@ export function CinemaLines() {
     mm.add("(min-width: 1024px)", () => {
       const ctx = gsap.context(() => {
         setupNeonScrollLines(svg, "[data-line]", "dNeonBlur", "+=70%", {
-          travelingPulse: true,
+          travelingPulse: false,
         });
       }, svg);
       return () => ctx.revert();
@@ -45,10 +45,10 @@ export function CinemaLines() {
           height="260%"
           colorInterpolationFilters="sRGB"
         >
-          <feGaussianBlur id="dNeonBlur" stdDeviation="3" result="blur" />
-          <feFlood floodColor="#ff5500" floodOpacity="0.95" result="color" />
+          <feGaussianBlur id="dNeonBlur" stdDeviation="1.5" result="blur" />
+          <feFlood floodColor="#ff5500" floodOpacity="0.35" result="color" />
           <feComposite in="color" in2="blur" operator="in" result="glow" />
-          <feGaussianBlur in="glow" stdDeviation="2" result="glow2" />
+          <feGaussianBlur in="glow" stdDeviation="1" result="glow2" />
           <feMerge>
             <feMergeNode in="glow2" />
             <feMergeNode in="glow2" />
@@ -64,7 +64,7 @@ export function CinemaLines() {
         </linearGradient>
         <linearGradient id="lineH2" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#f97316" stopOpacity="0" />
-          <stop offset="50%" stopColor="#f97316" stopOpacity="0.7" />
+          <stop offset="50%" stopColor="#f97316" stopOpacity="0.35" />
           <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
         </linearGradient>
       </defs>

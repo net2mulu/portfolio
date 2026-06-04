@@ -3,10 +3,25 @@
  * so ScrollTrigger advances when the user scrolls over text (not only the portrait).
  */
 export function bindMobileScrollProxy(target: HTMLElement) {
+  let pendingDelta = 0;
+  let rafId = 0;
+
+  const flush = () => {
+    rafId = 0;
+    if (pendingDelta === 0) return;
+    window.scrollBy({ top: pendingDelta, left: 0, behavior: "auto" });
+    pendingDelta = 0;
+  };
+
+  const queueScroll = (delta: number) => {
+    pendingDelta += delta;
+    if (!rafId) rafId = requestAnimationFrame(flush);
+  };
+
   const onWheel = (e: WheelEvent) => {
     if (e.ctrlKey || e.metaKey) return;
     e.preventDefault();
-    window.scrollBy({ top: e.deltaY, left: 0, behavior: "auto" });
+    queueScroll(e.deltaY);
   };
 
   let touchY = 0;
@@ -24,8 +39,8 @@ export function bindMobileScrollProxy(target: HTMLElement) {
     const delta = touchY - y;
     touchY = y;
     if (Math.abs(delta) < 2) return;
-    window.scrollBy({ top: delta, left: 0, behavior: "auto" });
     e.preventDefault();
+    queueScroll(delta);
   };
 
   const onTouchEnd = () => {
@@ -39,6 +54,7 @@ export function bindMobileScrollProxy(target: HTMLElement) {
   target.addEventListener("touchcancel", onTouchEnd);
 
   return () => {
+    if (rafId) cancelAnimationFrame(rafId);
     target.removeEventListener("wheel", onWheel);
     target.removeEventListener("touchstart", onTouchStart);
     target.removeEventListener("touchmove", onTouchMove);

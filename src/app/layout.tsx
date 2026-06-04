@@ -4,6 +4,8 @@ import { JsonLd } from "@/components/JsonLd";
 import {
   siteDescription,
   siteName,
+  siteOgImageAlt,
+  siteOgImagePath,
   siteTitle,
   siteUrl,
 } from "@/lib/site";
@@ -70,11 +72,20 @@ export const metadata: Metadata = {
     siteName,
     title: siteTitle,
     description: siteDescription,
+    images: [
+      {
+        url: siteOgImagePath,
+        width: 1280,
+        height: 720,
+        alt: siteOgImageAlt,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
+    images: [siteOgImagePath],
   },
   robots: {
     index: true,
