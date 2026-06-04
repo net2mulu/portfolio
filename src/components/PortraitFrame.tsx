@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PortraitVoidArt } from "@/components/PortraitVoidArt";
-import { FRAME_COUNT, framePath } from "@/lib/frames";
+import { FRAME_COUNT } from "@/lib/frames";
+import {
+  getPortraitFrameCache,
+  preloadPortraitFrames,
+} from "@/lib/portraitFrameCache";
 
 type PortraitFrameProps = {
   progressRef: React.MutableRefObject<number>;
@@ -173,43 +177,25 @@ export function PortraitFrame({
 
   useEffect(() => {
     let cancelled = false;
-    const cache: HTMLImageElement[] = new Array(FRAME_COUNT);
 
-    const preload = async () => {
-      const batch = variant === "mobile" ? 16 : 20;
-      for (let start = 0; start < FRAME_COUNT; start += batch) {
-        if (cancelled) return;
-        await Promise.all(
-          Array.from({ length: Math.min(batch, FRAME_COUNT - start) }, (_, j) => {
-            const i = start + j;
-            return new Promise<void>((resolve) => {
-              const img = new Image();
-              img.decoding = "async";
-              img.src = framePath(i);
-              img.onload = () => {
-                cache[i] = img;
-                resolve();
-              };
-              img.onerror = () => resolve();
-            });
-          }),
-        );
-        if (start === 0) {
-          cacheRef.current = cache;
-          setReady(true);
-          render(progressRef.current, fitOptions, opaqueCanvas);
-        }
-      }
+    const applyCache = (cache: HTMLImageElement[]) => {
+      if (cancelled) return;
       cacheRef.current = cache;
       setReady(true);
       render(progressRef.current, fitOptions, opaqueCanvas);
     };
 
-    void preload();
+    const existing = getPortraitFrameCache();
+    if (existing?.length) {
+      applyCache(existing);
+      return;
+    }
+
+    void preloadPortraitFrames().then((cache) => applyCache(cache));
     return () => {
       cancelled = true;
     };
-  }, [render, progressRef, variant, fitOptions, opaqueCanvas]);
+  }, [render, progressRef, fitOptions, opaqueCanvas]);
 
   useEffect(() => {
     if (!ready) return;

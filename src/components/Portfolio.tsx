@@ -1,11 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { AppBootLoader } from "@/components/AppBootLoader";
 import { PerformanceBoot } from "@/components/PerformanceBoot";
 import { ScrollCinema } from "@/components/ScrollCinema";
 import { Navigation } from "@/components/Navigation";
 import { ParallaxDecor } from "@/components/ParallaxDecor";
 import { Reveal } from "@/components/Reveal";
+import { usePortraitPreload } from "@/hooks/usePortraitPreload";
 import {
   about,
   philosophy,
@@ -14,9 +16,25 @@ import {
   site,
 } from "@/lib/content";
 
+const BOOT_IN_PROD = process.env.NODE_ENV === "production";
+
 export function Portfolio() {
+  const { ready, progress, statusLine } = usePortraitPreload(BOOT_IN_PROD);
+
   return (
     <>
+      <AnimatePresence mode="wait">
+        {BOOT_IN_PROD && !ready && (
+          <AppBootLoader
+            key="boot"
+            progress={progress}
+            statusLine={statusLine}
+          />
+        )}
+      </AnimatePresence>
+
+      {(!BOOT_IN_PROD || ready) && (
+        <>
       <PerformanceBoot />
       <ParallaxDecor />
       <Navigation />
@@ -198,6 +216,8 @@ export function Portfolio() {
           </p>
         </footer>
       </main>
+        </>
+      )}
     </>
   );
 }
