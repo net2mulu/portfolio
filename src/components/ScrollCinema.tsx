@@ -95,10 +95,6 @@ export function ScrollCinema() {
     const portraitWrapMobile = mobileRoot?.querySelector<HTMLElement>(
       "[data-portrait-wrap]",
     );
-    const portraitMobile = mobileRoot?.querySelector<HTMLElement>(
-      "[data-portrait-mobile]",
-    );
-
     const ctx = gsap.context(() => {
       const initPanels = (panels: HTMLElement[]) => {
         panels.forEach((panel, i) => {
@@ -114,18 +110,29 @@ export function ScrollCinema() {
       initPanels(mobilePanels);
       initPanels(desktopPanels);
 
+      let lastPanelProgress = -1;
+
       const applyProgress = (progress: number, isMobile: boolean) => {
         progressRef.current = progress;
+
         const panels = isMobile ? mobilePanels : desktopPanels;
-        updatePanels(panels, progress, isMobile);
+        const panelDelta = isMobile ? 0.012 : 0.004;
+        if (
+          !isMobile ||
+          Math.abs(progress - lastPanelProgress) >= panelDelta ||
+          progress <= 0.002 ||
+          progress >= 0.98
+        ) {
+          updatePanels(panels, progress, isMobile);
+          lastPanelProgress = progress;
+        }
 
         const portraitWrap = isMobile ? portraitWrapMobile : portraitWrapDesktop;
         if (portraitWrap) {
           const fade = Math.min(1, Math.max(0, (progress - 0.88) / 0.1));
-          gsap.set(portraitWrap, { opacity: 1 - fade });
-        }
-        if (portraitMobile && isMobile) {
-          gsap.set(portraitMobile, { scale: 1, y: 0 });
+          if (!isMobile || fade > 0.01) {
+            gsap.set(portraitWrap, { opacity: 1 - fade });
+          }
         }
       };
 
@@ -149,10 +156,11 @@ export function ScrollCinema() {
           const st = ScrollTrigger.create({
             trigger: root,
             start: "top top",
-            end: "+=200%",
-            scrub: 0.55,
+            end: "+=118%",
+            scrub: 0.12,
             pin: "#cinema-pin",
             anticipatePin: 1,
+            fastScrollEnd: true,
             invalidateOnRefresh: true,
             onUpdate: (self) => applyProgress(self.progress, true),
           });

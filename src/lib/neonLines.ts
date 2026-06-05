@@ -8,6 +8,7 @@ type NeonPathPair = {
 type NeonLinesOptions = {
   /** After draw-in, animate a traveling highlight along the path */
   travelingPulse?: boolean;
+  scrub?: number | boolean;
 };
 
 export function setupNeonScrollLines(
@@ -17,7 +18,7 @@ export function setupNeonScrollLines(
   scrollEnd = "+=85%",
   options: NeonLinesOptions = {},
 ) {
-  const { travelingPulse = true } = options;
+  const { travelingPulse = true, scrub = 0.45 } = options;
   const cores = gsap.utils.toArray<SVGPathElement>(pathSelector, svg);
   const pairs: NeonPathPair[] = cores.map((core) => ({
     core,
@@ -40,7 +41,7 @@ export function setupNeonScrollLines(
           trigger: "#scroll-cinema",
           start: "top top",
           end: scrollEnd,
-          scrub: 0.45,
+          scrub,
         },
       },
     );
@@ -51,7 +52,7 @@ export function setupNeonScrollLines(
       trigger: "#scroll-cinema",
       start: "top top",
       end: scrollEnd,
-      scrub: 0.45,
+      scrub,
     },
   });
 

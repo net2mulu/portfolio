@@ -1,8 +1,16 @@
 /**
  * Forwards wheel/touch scroll from the pinned mobile hero to the document
  * so ScrollTrigger advances when the user scrolls over text (not only the portrait).
+ * Real devices get higher gain — less finger travel per story step.
  */
 export function bindMobileScrollProxy(target: HTMLElement) {
+  const coarse =
+    typeof window !== "undefined" &&
+    window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+  const touchGain = coarse ? 1.65 : 1.35;
+  const wheelGain = coarse ? 1.25 : 1.1;
+
   let pendingDelta = 0;
   let rafId = 0;
 
@@ -21,7 +29,7 @@ export function bindMobileScrollProxy(target: HTMLElement) {
   const onWheel = (e: WheelEvent) => {
     if (e.ctrlKey || e.metaKey) return;
     e.preventDefault();
-    queueScroll(e.deltaY);
+    queueScroll(e.deltaY * wheelGain);
   };
 
   let touchY = 0;
@@ -36,9 +44,9 @@ export function bindMobileScrollProxy(target: HTMLElement) {
   const onTouchMove = (e: TouchEvent) => {
     if (!touching || e.touches.length !== 1) return;
     const y = e.touches[0].clientY;
-    const delta = touchY - y;
+    const delta = (touchY - y) * touchGain;
     touchY = y;
-    if (Math.abs(delta) < 2) return;
+    if (Math.abs(delta) < 0.35) return;
     e.preventDefault();
     queueScroll(delta);
   };

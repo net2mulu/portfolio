@@ -17,7 +17,10 @@ export function MobileCinemaLines() {
     const mm = gsap.matchMedia();
     mm.add("(max-width: 1023px)", () => {
       const ctx = gsap.context(() => {
-        setupNeonScrollLines(svg, "[data-mline]", "mNeonBlur", "+=90%");
+        setupNeonScrollLines(svg, "[data-mline]", "mNeonBlur", "+=75%", {
+          travelingPulse: false,
+          scrub: 0.2,
+        });
       }, svg);
       return () => ctx.revert();
     });

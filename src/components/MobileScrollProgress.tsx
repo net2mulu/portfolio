@@ -21,13 +21,31 @@ export function MobileScrollProgress({ progressRef }: MobileScrollProgressProps)
 
   useEffect(() => {
     let raf = 0;
+    let lastPct = -1;
+    let lastStep = -1;
+    let lastVisible = true;
+
     const tick = () => {
       const p = progressRef.current;
       const cinema = document.getElementById("scroll-cinema");
       const inCinema =
         !!cinema && cinema.getBoundingClientRect().bottom > 72;
-      setProgress(p);
-      setVisible(p < DONE_THRESHOLD && inCinema);
+      const pct = Math.round(p * 100);
+      const step = Math.min(STEPS.length - 1, Math.floor(p * STEPS.length));
+      const nextVisible = p < DONE_THRESHOLD && inCinema;
+
+      if (
+        pct !== lastPct ||
+        step !== lastStep ||
+        nextVisible !== lastVisible
+      ) {
+        lastPct = pct;
+        lastStep = step;
+        lastVisible = nextVisible;
+        setProgress(p);
+        setVisible(nextVisible);
+      }
+
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
