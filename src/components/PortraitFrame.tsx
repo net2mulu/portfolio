@@ -33,9 +33,8 @@ const MAX_DPR: Record<"desktop" | "mobile", number> = {
   mobile: 1,
 };
 
-/** On real phones: half the cached frames, no cross-fade blend */
-const MOBILE_FRAME_STEP = 2;
-const MOBILE_RENDER_INTERVAL_MS = 28;
+/** Mobile: light blend between frames, capped draw rate */
+const MOBILE_RENDER_INTERVAL_MS = 20;
 
 function getLayout(
   img: HTMLImageElement,
@@ -123,32 +122,20 @@ export function PortraitFrame({
       if (!canvas || cache.length === 0 || !syncCanvasSize()) return;
 
       const { cw, ch } = sizeRef.current;
-      const isMobileFast = variant === "mobile";
-      const frameSlots = isMobileFast
-        ? Math.ceil(FRAME_COUNT / MOBILE_FRAME_STEP)
-        : FRAME_COUNT;
-      const exact = p * (frameSlots - 1);
+      const isMobile = variant === "mobile";
+      const exact = p * (FRAME_COUNT - 1);
+      const i0 = Math.floor(exact);
+      const i1 = Math.min(FRAME_COUNT - 1, i0 + 1);
+      let blend = exact - i0;
 
-      let i0: number;
-      let i1: number;
-      let blend: number;
-
-      if (isMobileFast) {
-        const slot = Math.round(exact);
-        i0 = Math.min(FRAME_COUNT - 1, slot * MOBILE_FRAME_STEP);
-        i1 = i0;
-        blend = 0;
-      } else {
-        i0 = Math.floor(exact);
-        i1 = Math.min(FRAME_COUNT - 1, i0 + 1);
-        blend = exact - i0;
-        if (blend < 0.12) blend = 0;
-        else if (blend > 0.88) blend = 1;
-        else blend = (blend - 0.12) / 0.76;
-      }
+      const blendSoft = isMobile ? 0.22 : 0.12;
+      const blendHard = isMobile ? 0.78 : 0.88;
+      if (blend < blendSoft) blend = 0;
+      else if (blend > blendHard) blend = 1;
+      else blend = (blend - blendSoft) / (blendHard - blendSoft);
 
       const last = lastDrawRef.current;
-      const progressEpsilon = isMobileFast ? 0.008 : 0.02;
+      const progressEpsilon = isMobile ? 0.005 : 0.02;
       if (
         last.p === p &&
         last.i0 === i0 &&
@@ -179,7 +166,7 @@ export function PortraitFrame({
       }
 
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = isMobileFast ? "low" : "medium";
+      ctx.imageSmoothingQuality = "medium";
 
       if (blend <= 0) {
         drawImage(ctx, img0, l0);
@@ -222,7 +209,7 @@ export function PortraitFrame({
 
     let lastP = -1;
     let lastRenderAt = 0;
-    const isMobileFast = variant === "mobile";
+    const isMobile = variant === "mobile";
 
     const tick = (now: number) => {
       if (document.hidden) {
@@ -237,9 +224,9 @@ export function PortraitFrame({
       }
 
       if (
-        isMobileFast &&
+        isMobile &&
         now - lastRenderAt < MOBILE_RENDER_INTERVAL_MS &&
-        Math.abs(p - lastP) < 0.006
+        Math.abs(p - lastP) < 0.004
       ) {
         frameId = requestAnimationFrame(tick);
         return;

@@ -10,11 +10,11 @@ import { MobileScrollProgress } from "@/components/MobileScrollProgress";
 import { PortraitFrame } from "@/components/PortraitFrame";
 import { about, site } from "@/lib/content";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { updateCinemaPanels } from "@/lib/cinemaPanels";
+import { setMobileCinemaTrigger } from "@/lib/cinemaScroll";
 import { bindMobileScrollProxy } from "@/lib/mobileScrollProxy";
 
 gsap.registerPlugin(ScrollTrigger);
-
-const PANEL_COUNT = 3;
 
 function PanelContent({ index }: { index: 0 | 1 | 2 }) {
   if (index === 0) {
@@ -110,29 +110,18 @@ export function ScrollCinema() {
       initPanels(mobilePanels);
       initPanels(desktopPanels);
 
-      let lastPanelProgress = -1;
-
       const applyProgress = (progress: number, isMobile: boolean) => {
         progressRef.current = progress;
 
         const panels = isMobile ? mobilePanels : desktopPanels;
-        const panelDelta = isMobile ? 0.012 : 0.004;
-        if (
-          !isMobile ||
-          Math.abs(progress - lastPanelProgress) >= panelDelta ||
-          progress <= 0.002 ||
-          progress >= 0.98
-        ) {
-          updatePanels(panels, progress, isMobile);
-          lastPanelProgress = progress;
-        }
+        updateCinemaPanels(panels, progress, isMobile, (panel, values) => {
+          gsap.set(panel, values);
+        });
 
         const portraitWrap = isMobile ? portraitWrapMobile : portraitWrapDesktop;
         if (portraitWrap) {
-          const fade = Math.min(1, Math.max(0, (progress - 0.88) / 0.1));
-          if (!isMobile || fade > 0.01) {
-            gsap.set(portraitWrap, { opacity: 1 - fade });
-          }
+          const fade = Math.min(1, Math.max(0, (progress - 0.9) / 0.12));
+          gsap.set(portraitWrap, { opacity: 1 - fade });
         }
       };
 
@@ -154,22 +143,27 @@ export function ScrollCinema() {
         "(max-width: 1023px)": () => {
           applyProgress(0, true);
           const st = ScrollTrigger.create({
+            id: "cinema-mobile",
             trigger: root,
             start: "top top",
-            end: "+=118%",
-            scrub: 0.12,
+            end: "+=108%",
+            scrub: 0.32,
             pin: "#cinema-pin",
-            anticipatePin: 1,
-            fastScrollEnd: true,
+            anticipatePin: 0,
             invalidateOnRefresh: true,
             onUpdate: (self) => applyProgress(self.progress, true),
+            onEnterBack: (self) => applyProgress(self.progress, true),
+            onRefresh: (self) => applyProgress(self.progress, true),
           });
+
+          setMobileCinemaTrigger(st);
 
           const pinEl = root.querySelector<HTMLElement>("#cinema-pin");
           const unbindScroll = pinEl ? bindMobileScrollProxy(pinEl) : undefined;
 
           return () => {
             unbindScroll?.();
+            setMobileCinemaTrigger(null);
             st.kill();
           };
         },
@@ -260,57 +254,4 @@ export function ScrollCinema() {
       </div>
     </section>
   );
-}
-
-function updatePanels(
-  panels: HTMLElement[],
-  progress: number,
-  isMobile: boolean,
-) {
-  const p = Math.max(0, Math.min(0.9999, progress));
-  const slot = p * PANEL_COUNT;
-  const current = Math.floor(slot);
-  const blend = slot - current;
-
-  panels.forEach((panel, i) => {
-    let opacity = 0;
-    let y = 0;
-    let scale = 0.94;
-
-    if (i === current) {
-      opacity = 1;
-      scale = 1;
-      if (blend > 0.72 && i < panels.length - 1) {
-        const out = (blend - 0.72) / 0.28;
-        opacity = 1 - out;
-        y = isMobile ? -20 * out : -14 * out;
-        scale = 1 - out * 0.04;
-      }
-    } else if (i === current + 1 && blend > 0.72) {
-      const inn = (blend - 0.72) / 0.28;
-      opacity = inn;
-      y = isMobile ? 28 * (1 - inn) : 18 * (1 - inn);
-      scale = 0.94 + inn * 0.06;
-    }
-
-    if (progress <= 0.001 && i === 0) {
-      opacity = 1;
-      y = 0;
-      scale = 1;
-    }
-
-    if (progress >= 0.92 && i === panels.length - 1) {
-      opacity = 1;
-      y = 0;
-      scale = 1;
-    }
-
-    gsap.set(panel, {
-      opacity,
-      y,
-      scale,
-      visibility: opacity > 0.02 ? "visible" : "hidden",
-      pointerEvents: opacity > 0.5 ? "auto" : "none",
-    });
-  });
 }

@@ -8,7 +8,7 @@ export function bindMobileScrollProxy(target: HTMLElement) {
     typeof window !== "undefined" &&
     window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
-  const touchGain = coarse ? 1.65 : 1.35;
+  const touchGain = coarse ? 1.78 : 1.4;
   const wheelGain = coarse ? 1.25 : 1.1;
 
   let pendingDelta = 0;

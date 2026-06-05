@@ -822,6 +822,21 @@ body {
 }
 
 .mobile-scroll-progress__track {
+  --progress: 0;
+  position: relative;
+  padding: 14px 0;
+  margin: -10px 0;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mobile-scroll-progress__track.is-dragging {
+  cursor: grabbing;
+}
+
+.mobile-scroll-progress__track-rail {
   position: relative;
   height: 4px;
   border-radius: 999px;
@@ -832,25 +847,45 @@ body {
 .mobile-scroll-progress__fill {
   position: absolute;
   inset: 0;
+  width: 100%;
   transform-origin: left center;
+  transform: scaleX(var(--progress));
   border-radius: inherit;
   background: linear-gradient(90deg, #fbbf24, #f97316, #ea580c);
   box-shadow: 0 0 12px rgba(249, 115, 22, 0.55);
+  will-change: transform;
 }
 
 .mobile-scroll-progress__bead {
   position: absolute;
   top: 50%;
-  width: 10px;
-  height: 10px;
-  margin-left: -5px;
+  left: calc(var(--progress) * 100%);
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: #ffd699;
   box-shadow:
-    0 0 0 3px rgba(249, 115, 22, 0.35),
-    0 0 14px rgba(249, 115, 22, 0.8);
-  transform: translateY(-50%);
-  animation: progress-bead-pulse 1.6s ease-in-out infinite;
+    0 0 0 3px rgba(249, 115, 22, 0.4),
+    0 0 16px rgba(249, 115, 22, 0.75);
+  transform: translate(-50%, -50%);
+  will-change: left;
+  pointer-events: none;
+}
+
+.mobile-scroll-progress__track.is-animating .mobile-scroll-progress__fill {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-scroll-progress__track.is-animating .mobile-scroll-progress__bead {
+  transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-scroll-progress__ring-progress {
+  will-change: stroke-dashoffset;
+}
+
+.mobile-scroll-progress__card.is-animating .mobile-scroll-progress__ring-progress {
+  transition: stroke-dashoffset 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mobile-scroll-progress__steps {
@@ -865,19 +900,43 @@ body {
 }
 
 .mobile-scroll-progress__steps li {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-scroll-progress__steps button {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.2rem;
+  width: 100%;
+  padding: 0.2rem 0.1rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  font: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
   color: rgba(163, 163, 163, 0.7);
-  transition: color 0.25s;
+  cursor: pointer;
+  transition:
+    color 0.25s,
+    background 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.mobile-scroll-progress__steps li.is-active {
+.mobile-scroll-progress__steps button.is-active {
   color: var(--accent);
+  background: rgba(249, 115, 22, 0.1);
 }
 
-.mobile-scroll-progress__steps li.is-done {
+.mobile-scroll-progress__steps button.is-done {
   color: rgba(249, 115, 22, 0.55);
+}
+
+.mobile-scroll-progress__steps button:active {
+  transform: scale(0.97);
 }
 
 .mobile-scroll-progress__step-num {
@@ -886,15 +945,6 @@ body {
   opacity: 0.65;
 }
 
-@keyframes progress-bead-pulse {
-  0%,
-  100% {
-    transform: translateY(-50%) scale(1);
-  }
-  50% {
-    transform: translateY(-50%) scale(1.15);
-  }
-}
 
 .mobile-cinema-lines {
   mix-blend-mode: normal;
