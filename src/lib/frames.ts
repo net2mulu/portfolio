@@ -1,5 +1,5 @@
-/** Source frames on disk (0–123) */
-export const SOURCE_FRAME_COUNT = 124;
+/** Source frames on disk (0–191) */
+export const SOURCE_FRAME_COUNT = 192;
 
 /** Skip every Nth source frame for playback (2 ≈ 62 frames, smoother CPU/GPU) */
 export const FRAME_STRIDE = 2;
@@ -15,7 +15,7 @@ export function framePath(displayIndex: number): string {
     SOURCE_FRAME_COUNT - 1,
     clamped * FRAME_STRIDE,
   );
-  return `/assets/frames/frame_${String(sourceIndex).padStart(3, "0")}_delay-${FRAME_DELAY}.webp`;
+  return `/avif-frames/frame_${String(sourceIndex).padStart(3, "0")}_delay-${FRAME_DELAY}.avif`;
 }
 
 export const FRAME_PATHS = Array.from({ length: FRAME_COUNT }, (_, i) =>

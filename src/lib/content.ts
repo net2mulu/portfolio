@@ -10,21 +10,47 @@ export const site = {
   location: "Addis Ababa / Remote available",
 };
 
-/** Floating stack labels in portrait hero void area */
-export const portraitStackTags = [
-  { label: "React", x: "5%", y: "8%" },
-  { label: "Next.js", x: "55%", y: "4%" },
-  { label: "Node", x: "76%", y: "16%" },
-  { label: "TypeScript", x: "3%", y: "26%" },
-  { label: "NestJS", x: "36%", y: "12%" },
-  { label: "PostgreSQL", x: "68%", y: "30%" },
-  { label: "Prisma", x: "20%", y: "4%" },
-  { label: "AWS", x: "86%", y: "6%" },
-  { label: "Docker", x: "48%", y: "24%" },
-  { label: "Tailwind", x: "10%", y: "34%" },
-  { label: "GraphQL", x: "62%", y: "20%" },
-  { label: "Python", x: "40%", y: "2%" },
-] as const;
+export type PortraitStackTag = {
+  label: string;
+  x: string;
+  y: string;
+};
+
+/** Floating stack labels in portrait hero void area (desktop) */
+export const portraitStackTags: readonly PortraitStackTag[] = [
+  { label: "React", x: "4%", y: "5%" },
+  { label: "Next.js", x: "18%", y: "8%" },
+  { label: "TypeScript", x: "32%", y: "4%" },
+  { label: "Node", x: "46%", y: "7%" },
+  { label: "NestJS", x: "60%", y: "5%" },
+  { label: "GraphQL", x: "74%", y: "9%" },
+  { label: "PostgreSQL", x: "88%", y: "6%" },
+  { label: "Python", x: "8%", y: "17%" },
+  { label: "Prisma", x: "24%", y: "21%" },
+  { label: "AWS", x: "40%", y: "15%" },
+  { label: "Docker", x: "56%", y: "19%" },
+  { label: "Redis", x: "72%", y: "14%" },
+  { label: "Kubernetes", x: "86%", y: "22%" },
+  { label: "React Native", x: "12%", y: "29%" },
+  { label: "Flutter", x: "36%", y: "27%" },
+  { label: "Expo", x: "58%", y: "31%" },
+];
+
+/** Mobile portrait — spaced apart, mixed web / infra / mobile */
+export const portraitStackTagsMobile: readonly PortraitStackTag[] = [
+  { label: "React Native", x: "5%", y: "6%" },
+  { label: "Flutter", x: "28%", y: "4%" },
+  { label: "Expo", x: "52%", y: "7%" },
+  { label: "Swift", x: "78%", y: "5%" },
+  { label: "Kotlin", x: "6%", y: "15%" },
+  { label: "React", x: "32%", y: "13%" },
+  { label: "Next.js", x: "58%", y: "16%" },
+  { label: "TypeScript", x: "82%", y: "14%" },
+  { label: "AWS", x: "4%", y: "24%" },
+  { label: "Docker", x: "38%", y: "22%" },
+  { label: "Kubernetes", x: "62%", y: "25%" },
+  { label: "Nginx", x: "86%", y: "20%" },
+];
 
 export const about = {
   paragraphs: [

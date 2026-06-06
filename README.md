@@ -25,11 +25,11 @@ npm run start
 
 ## Frame processing
 
-From original green-screen frames in `public/frames/` (lossless transparent WebP):
+From source frames in `public/new-frames/` (black or green-screen → transparent AVIF):
 
 ```bash
 pip install -r requirements.txt
 python3 scripts/process_frames.py
 ```
 
-Output: `public/assets/frames/`. Social preview: `public/assets/me.png`.
+Output: `public/avif-frames/`. Social preview: `public/assets/me.png`.

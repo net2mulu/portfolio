@@ -32,19 +32,22 @@ export function MobileScrollProgress({ progressRef }: MobileScrollProgressProps)
 
   const [visible, setVisible] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
+  const [valueNow, setValueNow] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const applyVisual = useCallback((p: number) => {
     const clamped = Math.max(0, Math.min(1, p));
+    const pct = Math.round(clamped * 100);
     const track = trackRef.current;
     if (track) track.style.setProperty("--progress", String(clamped));
     if (ringRef.current) {
       ringRef.current.style.strokeDashoffset = String(RING_C * (1 - clamped));
     }
     if (pctRef.current) {
-      pctRef.current.textContent = String(Math.round(clamped * 100));
+      pctRef.current.textContent = String(pct);
     }
+    setValueNow(pct);
     const step = Math.min(STEPS.length - 1, Math.floor(clamped * STEPS.length));
     if (step !== lastStepRef.current) {
       lastStepRef.current = step;
@@ -182,7 +185,7 @@ export function MobileScrollProgress({ progressRef }: MobileScrollProgressProps)
             aria-label="Story progress"
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round(progressRef.current * 100)}
+            aria-valuenow={valueNow}
             onPointerDown={onTrackPointerDown}
             onPointerMove={onTrackPointerMove}
             onPointerUp={endDrag}

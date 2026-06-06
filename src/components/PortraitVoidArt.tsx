@@ -1,6 +1,6 @@
 "use client";
 
-import { portraitStackTags } from "@/lib/content";
+import { portraitStackTags, portraitStackTagsMobile } from "@/lib/content";
 
 type PortraitVoidArtProps = {
   variant?: "desktop" | "mobile";
@@ -13,10 +13,8 @@ const ORBS = [
   { x: "85%", y: "28%", size: 5, delay: 1.2 },
 ] as const;
 
-const MOBILE_TAGS = portraitStackTags.slice(0, 8);
-
 export function PortraitVoidArt({ variant = "desktop" }: PortraitVoidArtProps) {
-  const tags = variant === "mobile" ? MOBILE_TAGS : portraitStackTags;
+  const tags = variant === "mobile" ? portraitStackTagsMobile : portraitStackTags;
 
   return (
     <div

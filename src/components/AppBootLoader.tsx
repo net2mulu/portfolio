@@ -4,7 +4,24 @@ import { motion } from "framer-motion";
 import { portraitStackTags, site } from "@/lib/content";
 import type { PreloadProgress } from "@/lib/portraitFrameCache";
 
-const ORBIT_TAGS = portraitStackTags.slice(0, 8);
+const ORBIT_LABELS = [
+  "React",
+  "React Native",
+  "Flutter",
+  "AWS",
+  "Docker",
+  "Kubernetes",
+  "Next.js",
+  "Expo",
+  "NestJS",
+  "PostgreSQL",
+  "Prisma",
+  "GraphQL",
+] as const;
+
+const ORBIT_TAGS = ORBIT_LABELS.map((label) =>
+  portraitStackTags.find((tag) => tag.label === label),
+).filter((tag): tag is (typeof portraitStackTags)[number] => tag != null);
 
 type AppBootLoaderProps = {
   progress: PreloadProgress;
